@@ -1,0 +1,50 @@
+from telegram import ReplyKeyboardMarkup, Bot, Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackContext
+from credits import bot_token
+
+import subprocess
+
+def run(filename):
+    result = subprocess.check_output(
+        ['cmd', '/c', 'call', 'python', filename], shell=True)
+    return result.decode('utf-8')
+
+bot = Bot(token=bot_token)
+updater = Updater(token=bot_token)
+dispatcher = updater.dispatcher
+
+def get_data_from_file(day):
+    f = open(day, "r")
+    data = f.read()
+    f.close()
+    return data
+
+def write_to_wall(update, context):
+    if update.message.text == "clear":
+        wall = open('fire woll.txt', 'w')
+        comp = open('mini_compiler.py', 'w')
+        wall.close()
+        comp.close()
+        context.bot.send_message(update.effective_chat.id, 'Весь когда то вами написанный код был удален из всех файлов')
+    elif update.message.text == "start":
+        wall = open('fire woll.txt', 'r')
+        comp = open('mini_compiler.py', 'w')
+        comp.write(get_data_from_file("fire woll.txt"))
+        wall.close()
+        comp.close()
+    else:
+        wall = open('fire woll.txt', 'a')
+        text = update.message.text
+        if "import" in text.split():
+            context.bot.send_massage(update.effective_chat.id, "к сожалению наш компелятор не способен импортировать другие библиотеки")
+        elif text == "while True:":
+            context.bot.send_massage(update.effective_chat.id, "к сожалению использование бесконечных циклов может привести к неправельной работе программы")
+        else:
+            wall.write(text + '\n')
+        wall.close()
+
+write_to_wall_handler = MessageHandler(Filters.text, write_to_wall)
+dispatcher.add_handler(write_to_wall_handler)
+
+updater.start_polling()
+updater.idle()
